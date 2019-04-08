@@ -22,7 +22,7 @@
       "namespace": "Workshop"
     },
     "executable": {
-      "preprocess": ["pps", "ppx_deriving.std", "ppx_deriving_yojson"],
+      "preprocess": ["pps", "graphql_ppx", "ppx_deriving.std", "ppx_deriving_yojson"],
       "require": ["workshop.lib", "async", "graphql-async", "ezgzip", "httpaf-async", "str", "uri", "uuidm", "yojson"],
       "main": "WorkshopApp",
       "name": "WorkshopApp.exe"
@@ -34,6 +34,8 @@
   },
   "dependencies": {
     "@opam/async": "v0.12.0",
+    "@opam/cohttp": "2.0.0",
+    "@opam/cohttp-async": "*",
     "@opam/core": "v0.12.0",
     "@opam/dispatch": "0.4.0",
     "@opam/dune": ">=1.6.0",
@@ -46,11 +48,13 @@
     "@opam/uri": "2.2.0",
     "@opam/ppx_deriving": "4.2.1",
     "@opam/ppx_deriving_yojson": "3.3",
+    "@opam/sexplib": "*",
     "@opam/yojson": "*",
     "@esy-ocaml/reason": "*",
-    "refmterr": "*",
+    "graphql_ppx": "sgrove/graphql_ppx#dd060224049bd6beb74e4a8ab697f21315bba0e3",
     "ocaml": "^4.4.0",
-    "pesy": "*"
+    "pesy": "*",
+    "refmterr": "*"
   },
   "devDependencies": {
     "@opam/merlin": "*"

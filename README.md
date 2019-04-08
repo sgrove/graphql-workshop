@@ -50,3 +50,24 @@ esy x WorkshopApp.exe
 # Runs the "test" command in `package.json`.
 esy test
 ```
+
+## Server Architecture
++-----------------+           +------------+
+| HttpServer.Util |           |TopResolvers|
++-------|---------+           +-----|------+
+        |                           |
+  +-----|----+                +-----|-------+
+  |HttpServer|                |GraphQLServer|
+  +-----|----+                +-----|-------+
+        |                           |
+        |                      +----|----+
+        +----------------------+WebRoutes|
+        |                      +----|----+
+        |                           |    
+        |        +---------+        | 
+        +--------|TCPServer|--------+             
+                 +----|----+
+                      |
+                +-----|-----+
+                |WorkshopApp|
+                +-----------+

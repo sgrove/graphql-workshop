@@ -27,7 +27,12 @@ let error_handler = (_, ~request=?, error, startResponse) =>
 
 let callback = (_, reqd) => {
   let reqId = Workshop.Util.genUuid();
-  Deferred.don't_wait_for(WebRoutes.routes(reqId, reqd));
+  let routeRequest =
+    HttpServer.routes(
+      ~errorHandler=WebRoutes.errorHandler,
+      WebRoutes.routeHandlers,
+    );
+  Deferred.don't_wait_for(routeRequest(reqId, reqd));
 };
 
 let main = (port, max_accepts_per_batch, ()) => {
