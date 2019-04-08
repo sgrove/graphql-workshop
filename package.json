@@ -34,8 +34,6 @@
   },
   "dependencies": {
     "@opam/async": "v0.12.0",
-    "@opam/cohttp": "2.0.0",
-    "@opam/cohttp-async": "*",
     "@opam/core": "v0.12.0",
     "@opam/dispatch": "0.4.0",
     "@opam/dune": ">=1.6.0",
