@@ -1,0 +1,58 @@
+{
+  "name": "workshop",
+  "version": "0.0.0",
+  "description": "My Project",
+  "esy": {
+    "build": "pesy",
+    "release": {
+      "releasedBinaries": [
+        "WorkshopApp.exe"
+      ]
+    }
+  },
+  "buildDirs": {
+    "test": {
+      "require": ["workshop.lib"],
+      "main": "TestWorkshop",
+      "name": "TestWorkshop.exe"
+    },
+    "library": {
+      "require": ["async", "core", "dispatch", "uuidm"],
+      "name": "workshop.lib",
+      "namespace": "Workshop"
+    },
+    "executable": {
+      "preprocess": ["pps", "ppx_deriving.std", "ppx_deriving_yojson"],
+      "require": ["workshop.lib", "async", "graphql-async", "ezgzip", "httpaf-async", "str", "uri", "uuidm", "yojson"],
+      "main": "WorkshopApp",
+      "name": "WorkshopApp.exe"
+    }
+  },
+  "scripts": {
+    "pesy": "bash -c 'env PESY_MODE=update pesy'",
+    "test": "esy x TestWorkshop.exe"
+  },
+  "dependencies": {
+    "@opam/async": "v0.12.0",
+    "@opam/core": "v0.12.0",
+    "@opam/dispatch": "0.4.0",
+    "@opam/dune": ">=1.6.0",
+    "@opam/graphql": "0.9.0",
+    "@opam/graphql-async": "0.9.0",
+    "@opam/ezgzip": "0.2.1",
+    "@opam/httpaf": "0.5.0",
+    "@opam/httpaf-async": "0.5.0",
+    "@opam/uuidm": "0.9.7",
+    "@opam/uri": "2.2.0",
+    "@opam/ppx_deriving": "4.2.1",
+    "@opam/ppx_deriving_yojson": "3.3",
+    "@opam/yojson": "*",
+    "@esy-ocaml/reason": "*",
+    "refmterr": "*",
+    "ocaml": "^4.4.0",
+    "pesy": "*"
+  },
+  "devDependencies": {
+    "@opam/merlin": "*"
+  }
+}
