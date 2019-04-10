@@ -1,5 +1,4 @@
 open Common;
-open Async;
 
 /* A simple heartbeat endpoint to be used with e.g. load balance health check */
 let healthCheckHandler = (_keys, _rest, _request) =>
@@ -41,7 +40,7 @@ let testHandler = (_, _, _) =>
   );
 
 /* When and exception is raised, we'll provide our own handler for it */
-let errorHandler = (reqd, request, exn) => {
+let errorHandler = (_reqd, _request, exn) => {
   Workshop.OneLog.errorf(
     "Handler exception in request: %s\n",
     Core.Exn.to_string(exn),

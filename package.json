@@ -4,6 +4,7 @@
   "description": "My Project",
   "esy": {
     "build": "pesy",
+    "buildsInSource": "unsafe",
     "release": {
       "releasedBinaries": [
         "WorkshopApp.exe"
@@ -23,7 +24,7 @@
     },
     "executable": {
       "preprocess": ["pps", "graphql_ppx", "ppx_deriving.std", "ppx_deriving_yojson"],
-      "require": ["workshop.lib", "async", "graphql-async", "ezgzip", "httpaf-async", "str", "uri", "uuidm", "yojson"],
+      "require": ["workshop.lib", "async", "cohttp", "cohttp-async", "graphql-async", "ezgzip", "httpaf-async", "str", "uri", "uuidm", "yojson"],
       "main": "WorkshopApp",
       "name": "WorkshopApp.exe"
     }
@@ -34,6 +35,9 @@
   },
   "dependencies": {
     "@opam/async": "v0.12.0",
+    "@opam/async_ssl": "*",
+    "@opam/cohttp": "2.0.0",
+    "@opam/cohttp-async": "*",
     "@opam/core": "v0.12.0",
     "@opam/dispatch": "0.4.0",
     "@opam/dune": ">=1.6.0",
@@ -49,7 +53,7 @@
     "@opam/sexplib": "*",
     "@opam/yojson": "*",
     "@esy-ocaml/reason": "*",
-    "graphql_ppx": "sgrove/graphql_ppx#dd060224049bd6beb74e4a8ab697f21315bba0e3",
+    "graphql_ppx": "sgrove/graphql_ppx#4518ba5bf02cd3db1012af2fa2c10a3081307d87",
     "ocaml": "^4.4.0",
     "pesy": "*",
     "refmterr": "*"

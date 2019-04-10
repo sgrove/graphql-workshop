@@ -21,7 +21,6 @@ type response = {
 };
 
 open Httpaf;
-open Httpaf_async;
 
 let bofs = x =>
   `BigString(Bigstringaf.of_string(~off=0, ~len=String.length(x), x));
@@ -47,7 +46,7 @@ module Util = {
 
   let contentTypeHeader = kind => Headers.of_list([("content-type", kind)]);
 
-  let withContentType = (kind, headers) =>
+  let _withContentType = (kind, headers) =>
     Headers.add(headers, "content-type", kind);
 
   let withContentType = (kind, headers) =>
@@ -83,7 +82,7 @@ module Util = {
   };
 
   let allowCORSRequest = (_keys, _rest, request) => {
-    let {req} = request;
+    let {req, _} = request;
     let headers = getCORSHeaders(req);
     defer(respondOk(~headers, ""));
   };
@@ -228,8 +227,8 @@ let routes = (handlers, ~errorHandler, reqId: Uuidm.t, reqd) => {
           )
           >>| (
             fun
-            | Ok((request, {status}))
-            | Error((request, (_, status, _))) => {
+            | Ok((_request, _))
+            | Error((_request, (_, _, _))) => {
                 Workshop.OneLog.infof(
                   "Request end method=%s path=%s req_id=%s req_ms=%0.2f",
                   Httpaf.Method.to_string(req.meth),

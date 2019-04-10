@@ -1,3 +1,9 @@
+module Q2 = [%graphql {|{
+  tester {
+    id
+  }
+}|}];
+
 module Query = [%graphql
   {|
 query npm($package: String!) {
@@ -87,71 +93,95 @@ query npm($package: String!) {
 }|}
 ];
 
-open Cohttp;
 open Cohttp_async;
+let call = (uri, p) => {
+  open Async;
 
-let p = Query.make(~package=packageName, ());
+  let queryBody =
+    `Assoc([("query", `String(p#query)), ("variables", p#variables)])
+    |> Yojson.Basic.to_string
+    |> Cohttp_async.Body.of_string;
 
-let queryBody =
-  `Assoc([("query", `String(p#query)), ("variables", p#variables)])
-  |> Yojson.Basic.to_string
-  |> Cohttp_async.Body.of_string;
-
-let body =
-  Client.post(
-    ~body=queryBody,
-    Uri.of_string(
-      "https://serve.onegraph.com/dynamic?app_id=0b33e830-7cde-4b90-ad7e-2a39c57c0e11&show_metrics=true",
-    ),
-  )
+  Client.post(~body=queryBody, uri)
   >>= (
     ((_resp, bodyBytes)) => {
-      Cohttp_async.Body.to_string(bodyBytes) >>| (body => body);
+      Cohttp_async.Body.to_string(bodyBytes)
+      >>| (body => Yojson.Basic.from_string(body));
     }
   );
+};
 
-body
->>| (
-  body => {
-    open Yojson.Basic;
-    open Yojson.Basic.Util;
+let testOneGraph = (packageName, showMetrics) => {
+  open Async;
+  let p = Query.make(~package=packageName, ());
 
-    let json = from_string(body);
+  let uri =
+    Uri.of_string(
+      "https://serve.onegraph.com/dynamic?app_id=0b33e830-7cde-4b90-ad7e-2a39c57c0e11&show_metrics=true",
+    );
 
-    let p = p#parse(json |> member("data"));
+  call(uri, p)
+  >>| (
+    json => {
+      open Yojson.Basic;
+      open Yojson.Basic.Util;
 
-    switch (p#npm#package) {
-    | None =>
-      print_endline(Format.sprintf("No package \"%s\" found", packageName))
-    | Some(package) =>
-      let downloads =
-        switch (package#downloads#lastMonth) {
-        | None => None
-        | Some(i) => Some(i#count)
+      let p = p#parse(json |> member("data"));
+
+      switch (p#npm#package) {
+      | None => Workshop.OneLog.infof("No package \"%s\" found", packageName)
+      | Some(package) =>
+        let downloads =
+          switch (package#downloads#lastMonth) {
+          | None => None
+          | Some(i) => Some(i#count)
+          };
+
+        switch (showMetrics) {
+        | false => ()
+        | true =>
+          Workshop.OneLog.infof(
+            "Metrics by api:\n%s\n",
+            json
+            |> member("extensions")
+            |> member("metrics")
+            |> pretty_to_string,
+          )
         };
 
-      switch (showMetrics) {
-      | false => ()
-      | true =>
-        Format.printf(
-          "Metrics by api:\n%s\n",
-          json
-          |> member("extensions")
-          |> member("metrics")
-          |> pretty_to_string,
-        )
+        Workshop.OneLog.infof(
+          "%s: %s downloads last month\n",
+          packageName,
+          switch (downloads) {
+          | None => "missing"
+          | Some(count) => string_of_int(count)
+          },
+        );
+      /* Format.printf("@[<1>%s@ =@ %d@ %s@]@.", "Prix TTC", 100, "Euro"); */
       };
+    }
+  );
+};
 
-      Format.printf(
-        "%s: %s downloads last month\n",
-        packageName,
-        switch (downloads) {
-        | None => "missing"
-        | Some(count) => string_of_int(count)
-        },
-      );
-      Format.printf("\n");
-    /* Format.printf("@[<1>%s@ =@ %d@ %s@]@.", "Prix TTC", 100, "Euro"); */
-    };
-  }
-);
+let testHasura = (packageName, showMetrics) => {
+  open Async;
+  let p = Q2.make();
+
+  let uri =
+    Uri.of_string(
+      "https://serve.onegraph.com/dynamic?app_id=0b33e830-7cde-4b90-ad7e-2a39c57c0e11&show_metrics=true",
+    );
+
+  call(uri, p)
+  >>| (
+    json => {
+      open Yojson.Basic;
+      open Yojson.Basic.Util;
+
+      let p = p#parse(json |> member("data"));
+
+      p#tester
+      |> Array.iter(test => Workshop.OneLog.infof("Tester id: %s\n", test#id));
+    }
+  );
+};

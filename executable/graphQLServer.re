@@ -9,7 +9,7 @@ type queryBody = {
   operationName: option(string),
 };
 
-let createGqlCtx = headers => Deferred.return(Ok());
+let createGqlCtx = _headers => Deferred.return(Ok());
 
 let jsonErr = (value): result('a, Yojson.Basic.json) =>
   switch (value) {
@@ -28,8 +28,8 @@ let execute' = (resolverContext, _flags, variables, operationName, doc) =>
 
 let execute =
     (
-      req: Httpaf.Request.t,
-      incomingReqId,
+      _req: Httpaf.Request.t,
+      _incomingReqId,
       resolverContext: TopResolvers.schemaContext,
       variables,
       operationName,
@@ -158,7 +158,12 @@ let addExtensionsData =
   };
 
 let handleExecutionResult =
-    (~session as _, ~resolverContext, {origin}: HttpServer.request, result)
+    (
+      ~session as _,
+      ~resolverContext as _,
+      {origin, _}: HttpServer.request,
+      result,
+    )
     : Deferred.t(HttpServer.response) =>
   HttpServer.(
     switch (result) {
@@ -166,7 +171,8 @@ let handleExecutionResult =
       (
         switch (data) {
         | `Response(json) => Deferred.return(json)
-        | `Stream(reader) => raise(Failure("Subscriptions not implemented"))
+        | `Stream(_reader) =>
+          raise(Failure("Subscriptions not implemented"))
         }
       )
       >>| (
@@ -194,7 +200,10 @@ let handleExecutionResult =
   );
 
 let dynamicQuery =
-    (~readOnly, {req, reqId, bodyString} as request: HttpServer.request)
+    (
+      ~readOnly as _,
+      {req, reqId, bodyString, _} as request: HttpServer.request,
+    )
     : Deferred.t(HttpServer.response) => {
   let resolverContext = ();
 

@@ -7,6 +7,6 @@
    (name WorkshopApp)  ;  From package.json main field
    ; The name of the executable (runnable via esy x WorkshopApp.exe) 
    (public_name WorkshopApp.exe)  ;  From package.json name field
-   (libraries  workshop.lib async graphql-async ezgzip httpaf-async str uri uuidm yojson ) ;  From package.json require field (array of strings)
+   (libraries  workshop.lib async cohttp cohttp-async graphql-async ezgzip httpaf-async str uri uuidm yojson ) ;  From package.json require field (array of strings)
    (preprocess ( pps graphql_ppx ppx_deriving.std ppx_deriving_yojson ))  ; From package.json preprocess field
 )

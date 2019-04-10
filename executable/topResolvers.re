@@ -13,7 +13,7 @@ let user =
           ~doc="Unique user identifier",
           ~typ=non_null(string),
           ~args=Arg.[],
-          ~resolve=(info: rpContext, ()) =>
+          ~resolve=(_info: rpContext, ()) =>
           "abc"
         ),
       ]
@@ -26,8 +26,8 @@ let schema =
       field(
         "users",
         ~typ=non_null(list(non_null(user))),
-        ~args=Arg.[arg("count", non_null(int))],
-        ~resolve=(ctx: rpContext, (), count) =>
+        ~args=Arg.[arg("count", ~typ=non_null(int))],
+        ~resolve=(_ctx: rpContext, (), count) =>
         List.init(count, _ => ())
       ),
     ])

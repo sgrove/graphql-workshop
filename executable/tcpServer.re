@@ -11,7 +11,7 @@ let error_handler = (_, ~request=?, error, startResponse) =>
       | `Exn(exn) =>
         switch (request) {
         | None => ()
-        | Some(request) => ignore()
+        | Some(_request) => ignore()
         };
         Workshop.OneLog.errorf(
           "In ErrorHandler: %s",
@@ -68,6 +68,7 @@ let main = (port, max_accepts_per_batch, ()) => {
         "Server bound to port, app started, accepting connections now on port %d",
         port,
       );
+      ignore(GraphQLClient.test("graphql", true));
       Deferred.never();
     }
   );
