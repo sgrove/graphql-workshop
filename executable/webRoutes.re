@@ -55,6 +55,49 @@ let graphqlTestHandler = (_, _, _) =>
   )
   |> defer;
 
+/* Example non-GraphQL handler that uses GraphQL + Hasura to speak to the database */
+let shortenedUrlHandler = (keys, _rest, _request) => {
+  open Async;
+
+  let notFound =
+    HttpServer.{
+      headers: Httpaf.Headers.empty,
+      status: `Not_found,
+      body: bofs("No shortened url found"),
+    };
+
+  switch (List.assoc_opt("shortened-url-id", keys)) {
+  | None => defer(notFound)
+  | Some(id) =>
+    ShortenedUrlModel.byIdWithHit(
+      ~authSecret=GraphQLUtil.serverTrustedHasuraKey,
+      ~id,
+    )
+    >>| (
+      fun
+      | Some(shortened) => {
+          let destination = Uri.of_string(shortened#url);
+
+          let headers =
+            [("Location", Uri.to_string(destination))]
+            |> Httpaf.Headers.of_list;
+
+          let status = `Temporary_redirect;
+
+          let body =
+            destination
+            |> Uri.to_string
+            |> Printf.sprintf("Shortened url found, redirecting to %s")
+            |> HttpServer.bofs;
+
+          let response: HttpServer.response = {headers, status, body};
+          response;
+        }
+      | _ => notFound
+    )
+  };
+};
+
 let routes = [
   (`GET, "/test", testHandler),
   (`GET, "/graphql_client_test", graphqlTestHandler),
@@ -62,6 +105,7 @@ let routes = [
   (`POST, "/dynamic", dynamicQueryHandler(~readOnly=false)),
   (`GET, "/health-check/:check-type", healthCheckHandler),
   (`POST, "/test-error", throwErrorHandler),
+  (`GET, "/short/:shortened-url-id", shortenedUrlHandler),
   (`POST, "/test-graphql-error", GraphQLServer.throwGraphQLErrorHandler),
 ];
 

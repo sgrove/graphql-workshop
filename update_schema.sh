@@ -11,4 +11,4 @@ QUERY="query IntrospectionQuery { __schema { queryType { name } mutationType
   { kind name ofType { kind name ofType { kind name ofType { kind name ofType
     { kind name } } } } } } } } "
 
-curl -X POST $1 -d"{\"query\":\"$QUERY\"}" -v > graphql_schema.json
+curl -H 'x-hasura-admin-secret: myadminsecretkey' -X POST $1 -d"{\"query\":\"$QUERY\"}" -v > graphql_schema.json

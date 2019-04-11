@@ -23,6 +23,7 @@
       "namespace": "Workshop"
     },
     "executable": {
+      "includeSubdirs": "unqualified",
       "preprocess": ["pps", "graphql_ppx", "ppx_deriving.std", "ppx_deriving_yojson"],
       "require": ["workshop.lib", "async", "cohttp", "cohttp-async", "graphql-async", "ezgzip", "httpaf-async", "str", "uri", "uuidm", "yojson"],
       "main": "WorkshopApp",

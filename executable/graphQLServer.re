@@ -9,7 +9,7 @@ type queryBody = {
   operationName: option(string),
 };
 
-let createGqlCtx = _headers => Deferred.return(Ok());
+let createGqlCtx = _headers => Deferred.return(GraphQLUtil.makeContext());
 
 let jsonErr = (value): result('a, Yojson.Basic.json) =>
   switch (value) {
@@ -30,7 +30,7 @@ let execute =
     (
       _req: Httpaf.Request.t,
       _incomingReqId,
-      resolverContext: TopResolvers.schemaContext,
+      resolverContext: GraphQLUtil.schemaContext,
       variables,
       operationName,
       query,
@@ -161,7 +161,7 @@ let handleExecutionResult =
     (
       ~session as _,
       ~resolverContext as _,
-      {origin, _}: HttpServer.request,
+      {origin, _} as request: HttpServer.request,
       result,
     )
     : Deferred.t(HttpServer.response) =>
@@ -172,14 +172,16 @@ let handleExecutionResult =
         switch (data) {
         | `Response(json) => Deferred.return(json)
         | `Stream(_reader) =>
-          raise(Failure("Subscriptions not implemented"))
+          raise(Failure("Subscriptions are not implemented"))
         }
       )
       >>| (
         json => {
+          let corsHeaders = HttpServer.Util.getCORSHeaders(request.req);
+
           let headers =
             Httpaf.Headers.add_list(
-              Httpaf.Headers.empty,
+              corsHeaders,
               List.concat([[("Content-Type", "application/json")]]),
             );
           {headers, status: `OK, body: bofs(Yojson.Basic.to_string(json))};
@@ -205,7 +207,7 @@ let dynamicQuery =
       {req, reqId, bodyString, _} as request: HttpServer.request,
     )
     : Deferred.t(HttpServer.response) => {
-  let resolverContext = ();
+  let resolverContext = GraphQLUtil.makeContext();
 
   switch (decodeQueryBody(bodyString)) {
   | Error(e) =>

@@ -1,0 +1,8 @@
+CREATE TABLE shortened_url (
+id           VARCHAR(255) PRIMARY KEY NOT NULL,
+url          TEXT NOT NULL,
+enabled      BOOLEAN,
+created_at   TIMESTAMP WITHOUT TIME ZONE DEFAULT now() NOT NULL,
+updated_at   TIMESTAMP WITHOUT TIME ZONE DEFAULT now() NOT NULL,
+hits         INTEGER NOT NULL DEFAULT 0
+);

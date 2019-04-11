@@ -24,6 +24,7 @@ let error = errorf("%s");
 
 let fatal = fatalf("%s");
 
+/* These would normally be set by env variables */
 let isDev = true;
 let isDebug = true;
 

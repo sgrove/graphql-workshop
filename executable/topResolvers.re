@@ -1,8 +1,5 @@
 open Graphql_async;
-
-type schemaContext = unit;
-
-type rpContext = Schema.resolve_info(schemaContext);
+open GraphQLUtil;
 
 let user =
   Schema.(
@@ -20,15 +17,52 @@ let user =
     )
   );
 
+let builtInMutations = () =>
+  Schema.[
+    field(
+      "testMutate",
+      ~typ=non_null(bool),
+      ~args=Arg.[arg("testInput", ~typ=non_null(string))],
+      ~resolve=(_: rpContext, (), query) =>
+      query == "hi"
+    ),
+  ];
+
+let makeMutation = (~deprecated=Schema.NotDeprecated, fieldName, typ, args) =>
+  Schema.(
+    field(
+      fieldName, ~typ, ~args, ~deprecated, ~resolve=({ctx, _}: rpContext, ()) =>
+      ctx.readOnly
+        ? raise(Failure("Refusing to run mutations in read-only mode")) : ()
+    )
+  );
+
+let mutations = showBeta => [
+  ShortenUrlMutation.mutation(),
+  ...builtInMutations(showBeta),
+];
+
 let schema =
   Schema.(
-    schema([
-      field(
-        "users",
-        ~typ=non_null(list(non_null(user))),
-        ~args=Arg.[arg("count", ~typ=non_null(int))],
-        ~resolve=(_ctx: rpContext, (), count) =>
-        List.init(count, _ => ())
-      ),
-    ])
+    schema(
+      ~mutations=mutations(),
+      ~mutation_name="Mutation",
+      ~query_name="Query",
+      [
+        field(
+          "users",
+          ~typ=non_null(list(non_null(user))),
+          ~args=Arg.[arg("count", ~typ=non_null(int))],
+          ~resolve=({ctx, _}: rpContext, (), count) =>
+          switch (ctx.isAdmin) {
+          | false => List.init(count, _ => ())
+          | true => []
+          }
+        ),
+      ],
+    )
   );
+
+let makeSchema = _context => {
+  schema;
+};

@@ -1,0 +1,22 @@
+{
+  "name": "react-template",
+  "sources": {
+    "dir": "src",
+    "subdirs": true
+  },
+  "reason": { "react-jsx": 2 },
+  "package-specs": [
+    {
+      "module": "commonjs",
+      "in-source": true
+    }
+  ],
+  "suffix": ".bs.js",
+  "namespace": true,
+  "bs-dependencies": ["reason-apollo", "reason-react"],
+  "refmt": 3,
+  "ppx-flags": [
+    "get_in_ppx/ppx",
+    "graphql_ppx/ppx"
+  ]
+}

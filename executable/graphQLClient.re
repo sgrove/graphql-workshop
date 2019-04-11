@@ -1,187 +1,204 @@
-module Q2 = [%graphql {|{
-  tester {
+/* Example query 1: Hitting data in the database via Hasura */
+module Q1 = [%graphql
+  {|query find {
+  question {
     id
+    body
   }
-}|}];
-
-module Query = [%graphql
-  {|
-query npm($package: String!) {
-  npm {
-    package(name: $package) {
-      homepage
-      description
-      keywords
-      name
-      readme
-      readmeFilename
-      license {
-        type
+  cc_user {
+    id
+    name
+    votes {
+      question {
+        body
       }
-      maintainers {
+      cc_user {
         name
-      }
-      versions {
-        version
-        dependencies {
-          name
-          version
-        }
-      }
-      downloads {
-        lastMonth {
-          count
-          perDay {
-            day
-            count
-          }
-        }
-      }
-      time {
-        versions {
-          date
-          version
-        }
-      }
-      bundlephobia {
-        gzip
-        size
-        history {
-          gzip
-          size
-          version
-        }
-        dependencySizes {
-          approximateSize
-          name
-        }
-      }
-      repository {
-        url
-        sourceRepository {
-          ... on GitHubRepository {
-            name
-            url
-            homepageUrl
-            defaultBranchRef {
-              name
-            }
-            stargazers {
-              totalCount
-            }
-            watchers {
-              totalCount
-            }
-            issues(states: OPEN) {
-              totalCount
-            }
-            forks {
-              totalCount
-            }
-            pullRequests(states: OPEN) {
-              totalCount
-            }
-            primaryLanguage {
-              name
-              color
-            }
-          }
-        }
       }
     }
   }
-}|}
+}
+|}
+];
+
+/* Example query 2: Hitting data from npm by way of Hasura -> OneGraph -> npm.
+    In this case, Hasura is acting as our GraphQL gateway.
+   */
+module Q2 = [%graphql
+  {|
+     query npm($package: String!) {
+       npm {
+         package(name: $package) {
+           homepage
+           description
+           keywords
+           name
+           readme
+           readmeFilename
+           license {
+             type
+           }
+           maintainers {
+             name
+           }
+           versions {
+             version
+             dependencies {
+               name
+               version
+             }
+           }
+           downloads {
+             lastMonth {
+               count
+               perDay {
+                 day
+                 count
+               }
+             }
+           }
+           time {
+             versions {
+               date
+               version
+             }
+           }
+           bundlephobia {
+             gzip
+             size
+             history {
+               gzip
+               size
+               version
+             }
+             dependencySizes {
+               approximateSize
+               name
+             }
+           }
+           repository {
+             url
+             sourceRepository {
+               ... on GitHubRepository {
+                 name
+                 url
+                 homepageUrl
+                 defaultBranchRef {
+                   name
+                 }
+                 stargazers {
+                   totalCount
+                 }
+                 watchers {
+                   totalCount
+                 }
+                 issues(states: OPEN) {
+                   totalCount
+                 }
+                 forks {
+                   totalCount
+                 }
+                 pullRequests(states: OPEN) {
+                   totalCount
+                 }
+                 primaryLanguage {
+                   name
+                   color
+                 }
+               }
+             }
+           }
+         }
+       }
+     }|}
 ];
 
 open Cohttp_async;
-let call = (uri, p) => {
+
+let serverUri = Uri.of_string("http://localhost:8080/v1alpha1/graphql");
+
+let uuidOf = (json: Yojson.Basic.json) => {
+  switch (json) {
+  | `String(uuid) => Uuidm.of_string(uuid)
+  | _ => None
+  };
+};
+
+let makeAuthHeader = (~secret) =>
+  Cohttp.Header.init_with("x-hasura-admin-secret", secret);
+
+let call = (~headers=?, uri, p) => {
   open Async;
 
   let queryBody =
-    `Assoc([("query", `String(p#query)), ("variables", p#variables)])
-    |> Yojson.Basic.to_string
-    |> Cohttp_async.Body.of_string;
+    `Assoc([("query", `String(p#query)), ("variables", p#variables)]);
 
-  Client.post(~body=queryBody, uri)
+  Workshop.OneLog.infof(
+    "Raw pretty-printend GraphQL request:\n%s\n",
+    Yojson.Basic.pretty_to_string(queryBody),
+  );
+
+  Client.post(
+    ~headers?,
+    ~body=queryBody |> Yojson.Basic.to_string |> Cohttp_async.Body.of_string,
+    uri,
+  )
   >>= (
     ((_resp, bodyBytes)) => {
       Cohttp_async.Body.to_string(bodyBytes)
-      >>| (body => Yojson.Basic.from_string(body));
-    }
-  );
-};
+      >>| (
+        body => {
+          let json = Yojson.Basic.from_string(body);
 
-let testOneGraph = (packageName, showMetrics) => {
-  open Async;
-  let p = Query.make(~package=packageName, ());
-
-  let uri =
-    Uri.of_string(
-      "https://serve.onegraph.com/dynamic?app_id=0b33e830-7cde-4b90-ad7e-2a39c57c0e11&show_metrics=true",
-    );
-
-  call(uri, p)
-  >>| (
-    json => {
-      open Yojson.Basic;
-      open Yojson.Basic.Util;
-
-      let p = p#parse(json |> member("data"));
-
-      switch (p#npm#package) {
-      | None => Workshop.OneLog.infof("No package \"%s\" found", packageName)
-      | Some(package) =>
-        let downloads =
-          switch (package#downloads#lastMonth) {
-          | None => None
-          | Some(i) => Some(i#count)
-          };
-
-        switch (showMetrics) {
-        | false => ()
-        | true =>
           Workshop.OneLog.infof(
-            "Metrics by api:\n%s\n",
-            json
-            |> member("extensions")
-            |> member("metrics")
-            |> pretty_to_string,
-          )
-        };
+            "Raw pretty-printend GraphQL json:\n%s\n",
+            Yojson.Basic.pretty_to_string(json),
+          );
 
-        Workshop.OneLog.infof(
-          "%s: %s downloads last month\n",
-          packageName,
-          switch (downloads) {
-          | None => "missing"
-          | Some(count) => string_of_int(count)
-          },
-        );
-      /* Format.printf("@[<1>%s@ =@ %d@ %s@]@.", "Prix TTC", 100, "Euro"); */
-      };
+          switch (
+            Yojson.Basic.Util.(member("data", json), member("errors", json))
+          ) {
+          | (`Assoc(data), _) => Ok(p#parse(`Assoc(data)))
+          | (`Null, `List(data)) => Error(`List(data))
+          | _ => Error(`List([]))
+          };
+        }
+      );
     }
   );
 };
 
-let testHasura = (packageName, showMetrics) => {
+let testHasura = (~secret) => {
   open Async;
-  let p = Q2.make();
+  let p = Q1.make();
 
-  let uri =
-    Uri.of_string(
-      "https://serve.onegraph.com/dynamic?app_id=0b33e830-7cde-4b90-ad7e-2a39c57c0e11&show_metrics=true",
-    );
-
-  call(uri, p)
+  call(~headers=makeAuthHeader(~secret), serverUri, p)
   >>| (
-    json => {
-      open Yojson.Basic;
-      open Yojson.Basic.Util;
-
-      let p = p#parse(json |> member("data"));
-
-      p#tester
-      |> Array.iter(test => Workshop.OneLog.infof("Tester id: %s\n", test#id));
-    }
+    fun
+    | Error(err) =>
+      Workshop.OneLog.infof(
+        "Error in GraphQL call:\n%s\n",
+        Yojson.Basic.pretty_to_string(err),
+      )
+    | Ok(json) => {
+        Yojson.Basic.Util.(
+          json#cc_user
+          |> Array.iter(user =>
+               Workshop.OneLog.infof(
+                 "CC user name: %s (%s)\n",
+                 user#name,
+                 Workshop.Ooption.fmapDefault(
+                   "No id",
+                   uuidOf(user#id),
+                   Uuidm.to_string,
+                 ),
+               )
+             )
+        );
+      }
   );
 };
+
+/* A convenience method that wraps up all the Hasura-specific requirements. */
+let hasura = (~authSecret, p) =>
+  call(~headers=makeAuthHeader(~secret=authSecret), serverUri, p);

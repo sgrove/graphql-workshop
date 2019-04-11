@@ -68,7 +68,7 @@ let main = (port, max_accepts_per_batch, ()) => {
         "Server bound to port, app started, accepting connections now on port %d",
         port,
       );
-      ignore(GraphQLClient.test("graphql", true));
+      ignore(GraphQLClient.testHasura(~secret="myadminsecretkey"));
       Deferred.never();
     }
   );

@@ -10,3 +10,4 @@
    (libraries  workshop.lib async cohttp cohttp-async graphql-async ezgzip httpaf-async str uri uuidm yojson ) ;  From package.json require field (array of strings)
    (preprocess ( pps graphql_ppx ppx_deriving.std ppx_deriving_yojson ))  ; From package.json preprocess field
 )
+(include_subdirs unqualified) ;  From package.json includeSubdirs field
